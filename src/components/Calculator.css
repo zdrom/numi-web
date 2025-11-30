@@ -64,6 +64,8 @@
   position: relative;
   height: 100%;
   display: flex;
+  background: var(--bg-tertiary);
+  transition: background-color 0.3s ease;
 }
 
 .main-editor {
@@ -77,13 +79,16 @@
   line-height: 1.5;
   resize: none;
   outline: none;
-  background: var(--bg-tertiary);
+  background: transparent;
   color: transparent;
+  -webkit-text-fill-color: transparent;
   caret-color: var(--text-primary);
   overflow-y: auto;
   white-space: pre-wrap;
   word-wrap: break-word;
-  transition: background-color 0.3s ease;
+  transition: none;
+  position: relative;
+  z-index: 2;
 }
 
 .syntax-overlay {
@@ -101,15 +106,13 @@
   white-space: pre-wrap;
   word-wrap: break-word;
   color: var(--text-primary);
-}
-
-.main-editor:focus {
-  background: var(--bg-secondary);
+  z-index: 1;
 }
 
 .main-editor:empty:before {
   content: 'Start typing... Try "20 + 15" or "# My Header"';
   color: var(--text-muted);
+  -webkit-text-fill-color: var(--text-muted);
 }
 
 /* Syntax highlighting */
