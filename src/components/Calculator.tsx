@@ -301,6 +301,8 @@ export function Calculator() {
         <button className="clear-button" onClick={clearAll}>Clear All</button>
       </header>
 
+      <MobileKeyboard onInsert={insertText} editorRef={editorRef} />
+
       <div className="calculator-body">
         <div className="editor-container">
           <div
@@ -362,8 +364,6 @@ export function Calculator() {
           )}
         </div>
       </div>
-
-      <MobileKeyboard onInsert={insertText} editorRef={editorRef} />
 
       <footer className="calculator-footer">
         <div className="hints">
