@@ -59,6 +59,13 @@ x + y
 - `# Header` - Create section headers
 - `// Comment` - Add comments to your calculations
 
+## ✨ New Features
+
+- **🌙 Dark Mode** - Toggle between light, dark, and auto themes
+- **💾 Auto-Save** - Never lose your work with automatic localStorage saving
+- **📋 Copy Results** - One-click copy any result to clipboard
+- **🎨 CSS Units** - Convert between px, em, rem, vh, vw, and more
+
 ## Installation
 
 1. Install dependencies:
@@ -80,6 +87,37 @@ npm run build
 ```bash
 npm run preview
 ```
+
+## 🚀 Deployment
+
+### Deploy to GitHub Pages
+
+1. Create a new repository on GitHub named `numi-web`
+
+2. Push your code to GitHub:
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/numi-web.git
+git push -u origin main
+```
+
+3. Enable GitHub Pages:
+   - Go to repository Settings > Pages
+   - Source: GitHub Actions
+   - The app will automatically deploy on every push to main
+
+4. Your app will be live at:
+   ```
+   https://YOUR_USERNAME.github.io/numi-web/
+   ```
+
+### Manual Deployment
+
+Alternatively, deploy manually using:
+```bash
+npm run deploy
+```
+
+This builds the app and pushes to the `gh-pages` branch.
 
 ## Usage
 
