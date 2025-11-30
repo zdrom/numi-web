@@ -16,10 +16,10 @@ export function Calculator() {
   const [autocompleteOptions, setAutocompleteOptions] = useState<string[]>([]);
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
   const [selectedAutocompleteIndex, setSelectedAutocompleteIndex] = useState(0);
-  const [isSaved, setIsSaved] = useState(true);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const syntaxRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -47,13 +47,9 @@ export function Calculator() {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Mark as unsaved when content changes
-    setIsSaved(false);
-
     // Debounce save for 2 seconds
     saveTimeoutRef.current = window.setTimeout(() => {
       saveContent(content);
-      setIsSaved(true);
     }, 2000);
 
     return () => {
@@ -86,10 +82,15 @@ export function Calculator() {
   }, [content]);
 
   useEffect(() => {
-    // Sync scroll between editor and overlay
+    // Sync scroll between editor and overlays
     const handleScroll = () => {
-      if (editorRef.current && overlayRef.current) {
-        overlayRef.current.scrollTop = editorRef.current.scrollTop;
+      if (editorRef.current) {
+        if (overlayRef.current) {
+          overlayRef.current.scrollTop = editorRef.current.scrollTop;
+        }
+        if (syntaxRef.current) {
+          syntaxRef.current.scrollTop = editorRef.current.scrollTop;
+        }
       }
     };
 
@@ -99,6 +100,40 @@ export function Calculator() {
       return () => editor.removeEventListener('scroll', handleScroll);
     }
   }, []);
+
+  const highlightSyntax = (text: string): string => {
+    const variables = parser.getVariables();
+    const varNames = variables.map(v => v.name);
+    const keywords = ['prev', 'sum', 'total', 'average', 'avg', 'pi', 'e', 'in', 'to'];
+
+    // Escape special regex characters
+    const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    let highlighted = text;
+
+    // Highlight comments first (so they don't get other highlighting)
+    highlighted = highlighted.replace(/(\/\/.*)/g, '<span class="syntax-comment">$1</span>');
+
+    // Highlight keywords
+    keywords.forEach(keyword => {
+      const regex = new RegExp(`\\b(${escapeRegex(keyword)})\\b`, 'g');
+      highlighted = highlighted.replace(regex, '<span class="syntax-keyword">$1</span>');
+    });
+
+    // Highlight variable names
+    varNames.forEach(varName => {
+      const regex = new RegExp(`\\b(${escapeRegex(varName)})\\b`, 'g');
+      highlighted = highlighted.replace(regex, '<span class="syntax-variable">$1</span>');
+    });
+
+    // Highlight numbers
+    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span class="syntax-number">$1</span>');
+
+    // Highlight operators
+    highlighted = highlighted.replace(/([+\-*/=()%])/g, '<span class="syntax-operator">$1</span>');
+
+    return highlighted;
+  };
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     // Get text content preserving newlines from <br> and <div> elements
@@ -290,21 +325,21 @@ export function Calculator() {
   return (
     <div className="calculator">
       <header className="calculator-header">
+        <button className="clear-button" onClick={clearAll} title="Clear all">🗑️</button>
         <h1>Numi</h1>
-        <p className="tagline">
-          Beautiful calculator
-          <span className={`save-indicator ${isSaved ? 'saved' : 'saving'}`}>
-            {isSaved ? ' • Saved' : ' • Saving...'}
-          </span>
-        </p>
         <ThemeToggle />
-        <button className="clear-button" onClick={clearAll}>Clear All</button>
       </header>
 
       <MobileKeyboard onInsert={insertText} editorRef={editorRef} />
 
       <div className="calculator-body">
         <div className="editor-container">
+          <div
+            ref={syntaxRef}
+            className="syntax-overlay"
+            dangerouslySetInnerHTML={{ __html: highlightSyntax(content) }}
+          />
+
           <div
             ref={editorRef}
             className="main-editor"
