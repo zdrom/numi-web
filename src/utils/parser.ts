@@ -12,6 +12,8 @@ const constants = {
 export class NumiParser {
   private variables: Map<string, Variable> = new Map();
   private previousResult: number | null = null;
+  private variableCurrencyFlags: Map<string, boolean> = new Map();
+  private previousHadDollarSign: boolean = false;
 
   parse(input: string): string {
     const trimmed = input.trim();
@@ -32,6 +34,24 @@ export class NumiParser {
     }
 
     try {
+      // Detect if input contains a dollar sign OR if it references a variable with dollar sign
+      let hasDollarSign = trimmed.includes('$');
+
+      // Check if any referenced variables have dollar signs
+      if (!hasDollarSign) {
+        this.variableCurrencyFlags.forEach((hasCurrency, varName) => {
+          const regex = new RegExp(`\\b${varName}\\b`, 'gi');
+          if (hasCurrency && regex.test(trimmed)) {
+            hasDollarSign = true;
+          }
+        });
+      }
+
+      // Also check if using 'prev' and previous result had dollar sign
+      if (!hasDollarSign && trimmed.includes('prev') && this.previousHadDollarSign) {
+        hasDollarSign = true;
+      }
+
       // Variable assignment (e.g., "x = 10")
       const varMatch = trimmed.match(/^([a-zA-Z_]\w*)\s*=\s*(.+)$/);
       if (varMatch) {
@@ -39,13 +59,17 @@ export class NumiParser {
         const result = this.evaluate(expr);
         // Store with lowercase key for case-insensitive lookup
         this.variables.set(name.toLowerCase(), { name, value: result });
-        return this.formatResult(result);
+        // Track if this variable has a dollar sign
+        this.variableCurrencyFlags.set(name.toLowerCase(), hasDollarSign);
+        this.previousHadDollarSign = hasDollarSign;
+        return this.formatResult(result, hasDollarSign);
       }
 
       // Evaluate expression
       const result = this.evaluate(trimmed);
       this.previousResult = result;
-      return this.formatResult(result);
+      this.previousHadDollarSign = hasDollarSign;
+      return this.formatResult(result, hasDollarSign);
     } catch (error) {
       if (error instanceof Error) {
         return `Error: ${error.message}`;
@@ -55,6 +79,13 @@ export class NumiParser {
   }
 
   private evaluate(expr: string): number {
+    // Remove commas from numbers (thousand separators)
+    // Match pattern: digits, comma, 3 digits (e.g., 1,000 or 1,000,000)
+    expr = expr.replace(/(\d),(\d{3})/g, '$1$2');
+    // Repeat to handle multiple commas (e.g., 1,000,000)
+    expr = expr.replace(/(\d),(\d{3})/g, '$1$2');
+    expr = expr.replace(/(\d),(\d{3})/g, '$1$2');
+
     // Replace 'prev' with previous result
     if (expr.includes('prev') && this.previousResult !== null) {
       expr = expr.replace(/\bprev\b/g, String(this.previousResult));
@@ -306,26 +337,39 @@ export class NumiParser {
       .replace(/\bfloor\(/gi, 'floor(');
   }
 
-  private formatResult(value: number): string {
-    // Handle very large and very small numbers
-    if (Math.abs(value) > 1e6 || (Math.abs(value) < 1e-4 && value !== 0)) {
-      return value.toExponential(6);
-    }
-
+  private formatResult(value: number, includeDollarSign: boolean = false): string {
     // Round to avoid floating point errors
     const rounded = Math.round(value * 1e10) / 1e10;
 
-    // Format with appropriate decimal places
+    // Format with appropriate decimal places and thousands separators
+    // Never use scientific notation - always show full number
+    let formatted: string;
     if (Number.isInteger(rounded)) {
-      return rounded.toLocaleString();
+      formatted = rounded.toLocaleString('en-US', {
+        useGrouping: true,
+        maximumFractionDigits: 0
+      });
+    } else {
+      formatted = rounded.toLocaleString('en-US', {
+        useGrouping: true,
+        maximumFractionDigits: 6,
+        minimumFractionDigits: 0
+      });
     }
 
-    return rounded.toLocaleString(undefined, { maximumFractionDigits: 6 });
+    // Add dollar sign if input contained one
+    if (includeDollarSign) {
+      return '$' + formatted;
+    }
+
+    return formatted;
   }
 
   clearVariables(): void {
     this.variables.clear();
     this.previousResult = null;
+    this.variableCurrencyFlags.clear();
+    this.previousHadDollarSign = false;
   }
 
   getVariables(): Variable[] {
@@ -339,6 +383,8 @@ export class NumiParser {
 
     // Clear variables for fresh parse
     this.variables.clear();
+    this.variableCurrencyFlags.clear();
+    this.previousHadDollarSign = false;
 
     lines.forEach((line, index) => {
       const trimmed = line.trim();
@@ -386,6 +432,24 @@ export class NumiParser {
       try {
         let expr = trimmed;
 
+        // Detect if input contains a dollar sign OR if it references a variable with dollar sign
+        let hasDollarSign = trimmed.includes('$');
+
+        // Check if any referenced variables have dollar signs
+        if (!hasDollarSign) {
+          this.variableCurrencyFlags.forEach((hasCurrency, varName) => {
+            const regex = new RegExp(`\\b${varName}\\b`, 'gi');
+            if (hasCurrency && regex.test(trimmed)) {
+              hasDollarSign = true;
+            }
+          });
+        }
+
+        // Also check if using 'prev' and previous result had dollar sign
+        if (!hasDollarSign && trimmed.includes('prev') && this.previousHadDollarSign) {
+          hasDollarSign = true;
+        }
+
         // Set previousResult in parser state so evaluate() can access it
         this.previousResult = previousResult;
 
@@ -408,7 +472,10 @@ export class NumiParser {
           const result = this.evaluate(valueExpr);
           // Store with lowercase key for case-insensitive lookup
           this.variables.set(name.toLowerCase(), { name, value: result });
-          const formatted = this.formatResult(result);
+          // Track if this variable has a dollar sign
+          this.variableCurrencyFlags.set(name.toLowerCase(), hasDollarSign);
+          this.previousHadDollarSign = hasDollarSign;
+          const formatted = this.formatResult(result, hasDollarSign);
 
           results.push({
             lineNumber: index,
@@ -424,7 +491,8 @@ export class NumiParser {
 
         // Regular evaluation
         const numericResult = this.evaluate(expr);
-        const formatted = this.formatResult(numericResult);
+        this.previousHadDollarSign = hasDollarSign;
+        const formatted = this.formatResult(numericResult, hasDollarSign);
 
         results.push({
           lineNumber: index,

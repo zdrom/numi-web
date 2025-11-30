@@ -4,6 +4,7 @@ import { NumiParser } from '../utils/parser';
 import { updateExchangeRates } from '../utils/currency';
 import { ThemeToggle } from './ThemeToggle';
 import { MobileKeyboard } from './MobileKeyboard';
+import { InstallPrompt } from './InstallPrompt';
 import { saveContent, loadContent } from '../utils/storage';
 import { getContentFromURL, updateURL, createShareableURL } from '../utils/url';
 import { triggerHaptic } from '../utils/haptics';
@@ -409,6 +410,7 @@ export function Calculator() {
       </header>
 
       <MobileKeyboard onInsert={insertText} editorRef={editorRef} keyboardHeight={keyboardHeight} />
+      <InstallPrompt />
 
       <div className="calculator-body">
         <div className="editor-container">
