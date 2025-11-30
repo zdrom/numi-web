@@ -109,7 +109,13 @@ export function Calculator() {
     // Escape special regex characters
     const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    let highlighted = text;
+    // Escape HTML first
+    let highlighted = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
 
     // Highlight comments first (so they don't get other highlighting)
     highlighted = highlighted.replace(/(\/\/.*)/g, '<span class="syntax-comment">$1</span>');
