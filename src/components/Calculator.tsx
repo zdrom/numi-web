@@ -5,6 +5,7 @@ import { updateExchangeRates } from '../utils/currency';
 import { ThemeToggle } from './ThemeToggle';
 import { MobileKeyboard } from './MobileKeyboard';
 import { saveContent, loadContent } from '../utils/storage';
+import { getContentFromURL, updateURL, createShareableURL } from '../utils/url';
 import './Calculator.css';
 
 const parser = new NumiParser();
@@ -16,18 +17,31 @@ export function Calculator() {
   const [autocompleteOptions, setAutocompleteOptions] = useState<string[]>([]);
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
   const [selectedAutocompleteIndex, setSelectedAutocompleteIndex] = useState(0);
+  const [showShareFeedback, setShowShareFeedback] = useState(false);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<number | null>(null);
+  const shareFeedbackTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Load saved content on mount
-    const savedState = loadContent();
-    if (savedState && savedState.content) {
-      setContent(savedState.content);
+    // Load content on mount: priority is URL > localStorage > empty
+    const urlContent = getContentFromURL();
+
+    if (urlContent) {
+      // Content from URL takes precedence
+      setContent(urlContent);
       if (editorRef.current) {
-        editorRef.current.textContent = savedState.content;
+        editorRef.current.textContent = urlContent;
+      }
+    } else {
+      // Fall back to localStorage
+      const savedState = loadContent();
+      if (savedState && savedState.content) {
+        setContent(savedState.content);
+        if (editorRef.current) {
+          editorRef.current.textContent = savedState.content;
+        }
       }
     }
 
@@ -49,6 +63,7 @@ export function Calculator() {
     // Debounce save for 2 seconds
     saveTimeoutRef.current = window.setTimeout(() => {
       saveContent(content);
+      updateURL(content);
     }, 2000);
 
     return () => {
@@ -253,6 +268,28 @@ export function Calculator() {
     }
   };
 
+  const shareURL = async () => {
+    try {
+      const url = createShareableURL(content);
+      await navigator.clipboard.writeText(url);
+
+      // Show feedback
+      setShowShareFeedback(true);
+
+      // Clear any existing timeout
+      if (shareFeedbackTimeoutRef.current) {
+        clearTimeout(shareFeedbackTimeoutRef.current);
+      }
+
+      // Hide feedback after 2 seconds
+      shareFeedbackTimeoutRef.current = window.setTimeout(() => {
+        setShowShareFeedback(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy share URL:', error);
+    }
+  };
+
   const insertText = (text: string) => {
     if (!editorRef.current) return;
 
@@ -287,7 +324,16 @@ export function Calculator() {
       <header className="calculator-header">
         <button className="clear-button" onClick={clearAll} title="Clear all">🗑️</button>
         <h1>Numi</h1>
-        <ThemeToggle />
+        <div className="header-actions">
+          <button
+            className="share-button"
+            onClick={shareURL}
+            title="Copy shareable link"
+          >
+            {showShareFeedback ? '✓ Copied!' : '🔗 Share'}
+          </button>
+          <ThemeToggle />
+        </div>
       </header>
 
       <MobileKeyboard onInsert={insertText} editorRef={editorRef} />
