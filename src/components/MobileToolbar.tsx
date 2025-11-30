@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { triggerHaptic } from '../utils/haptics';
 import './MobileToolbar.css';
 
-export type ToolbarAction = 'undo' | 'clear' | 'left' | 'right' | 'dismiss';
+export type ToolbarAction = 'undo' | 'clear' | 'left' | 'right' | 'dismiss' | 'return';
 
 interface MobileToolbarProps {
     onInsert: (text: string) => void;
@@ -52,6 +52,7 @@ export function MobileToolbar({ onInsert, onAction, currentResult }: MobileToolb
         { label: 'cm', value: ' cm', type: 'unit' },
         { label: 'kg', value: ' kg', type: 'unit' },
         { label: 'lb', value: ' lb', type: 'unit' },
+        { label: 'prev', value: 'prev', type: 'function' },
         { label: 'sum', value: 'sum', type: 'function' },
         { label: 'avg', value: 'average', type: 'function' },
     ];
@@ -75,6 +76,9 @@ export function MobileToolbar({ onInsert, onAction, currentResult }: MobileToolb
                     </button>
                     <button className="action-btn" onClick={() => handleActionClick('right')} title="Move Right">
                         →
+                    </button>
+                    <button className="action-btn" onClick={() => handleActionClick('return')} title="Return">
+                        ↵
                     </button>
                     <button className="action-btn" onClick={() => handleActionClick('undo')} title="Undo">
                         ↶

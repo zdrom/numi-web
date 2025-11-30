@@ -205,6 +205,19 @@ export function Calculator() {
         setContent(textarea.value); // Sync state
         updateCursorPosition();
         break;
+      case 'return':
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const currentContent = textarea.value;
+        const newContent = currentContent.substring(0, start) + '\n' + currentContent.substring(end);
+
+        textarea.value = newContent;
+        setContent(newContent);
+
+        const newPos = start + 1;
+        textarea.setSelectionRange(newPos, newPos);
+        updateCursorPosition();
+        break;
       case 'clear':
         // Clear current line
         const lines = content.split('\n');
