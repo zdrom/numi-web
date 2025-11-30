@@ -8,10 +8,9 @@ interface MobileToolbarProps {
     onInsert: (text: string) => void;
     onAction: (action: ToolbarAction) => void;
     currentResult: string | null;
-    keyboardHeight: number;
 }
 
-export function MobileToolbar({ onInsert, onAction, currentResult, keyboardHeight }: MobileToolbarProps) {
+export function MobileToolbar({ onInsert, onAction, currentResult }: MobileToolbarProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -60,9 +59,6 @@ export function MobileToolbar({ onInsert, onAction, currentResult, keyboardHeigh
     return (
         <div
             className="mobile-toolbar"
-            style={{
-                bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px'
-            }}
         >
             {/* Row 1: Live Result & Actions */}
             <div className="toolbar-top-row">

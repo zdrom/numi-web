@@ -21,7 +21,6 @@ export function Calculator() {
   const [selectedAutocompleteIndex, setSelectedAutocompleteIndex] = useState(0);
   const [showShareFeedback, setShowShareFeedback] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [activeLineIndex, setActiveLineIndex] = useState(0);
 
@@ -140,30 +139,7 @@ export function Calculator() {
     }
   }, []);
 
-  useEffect(() => {
-    // Track keyboard height on mobile devices using visualViewport API
-    if (!isTouchDevice) return;
 
-    const handleResize = () => {
-      if (window.visualViewport) {
-        const offset = window.innerHeight - window.visualViewport.height;
-        setKeyboardHeight(offset);
-
-        const isKeyboardOpen = offset > 0;
-
-        if (isKeyboardOpen && editorRef.current) {
-          // Scroll active line into view above keyboard + toolbar
-          editorRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }
-      }
-    };
-
-    window.visualViewport?.addEventListener('resize', handleResize);
-    return () => window.visualViewport?.removeEventListener('resize', handleResize);
-  }, [isTouchDevice]);
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     // Get text content preserving newlines from <br> and <div> elements
@@ -471,8 +447,9 @@ export function Calculator() {
         onInsert={insertText}
         onAction={handleToolbarAction}
         currentResult={parsedLines[activeLineIndex]?.result || null}
-        keyboardHeight={keyboardHeight}
       />
+
+
       <InstallPrompt />
 
       <div className="calculator-body">

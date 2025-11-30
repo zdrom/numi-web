@@ -1,22 +1,18 @@
 .mobile-toolbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border-color);
-  padding-bottom: max(0px, env(safe-area-inset-bottom));
-  z-index: 1000;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   transform: translateZ(0);
 }
 
 [data-theme="dark"] .mobile-toolbar {
   background: rgba(31, 41, 55, 0.85);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Row 1: Live Result & Actions */
