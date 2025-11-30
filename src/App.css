@@ -11,6 +11,7 @@
   --scrollbar-track: #f1f1f1;
   --scrollbar-thumb: #888;
   --scrollbar-thumb-hover: #555;
+  --primary-color: #667eea;
 }
 
 [data-theme="dark"] {
@@ -34,7 +35,8 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: hidden;
 }
@@ -89,7 +91,10 @@ input[type="number"] {
 }
 
 /* Improve mobile tap highlighting */
-button, a, input, textarea {
+button,
+a,
+input,
+textarea {
   -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
 }
 

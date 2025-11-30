@@ -3,7 +3,7 @@ import { ParsedLine } from '../types';
 import { NumiParser } from '../utils/parser';
 import { updateExchangeRates } from '../utils/currency';
 import { ThemeToggle } from './ThemeToggle';
-import { MobileKeyboard } from './MobileKeyboard';
+import { MobileToolbar, ToolbarAction } from './MobileToolbar';
 import { InstallPrompt } from './InstallPrompt';
 import { saveContent, loadContent } from '../utils/storage';
 import { getContentFromURL, updateURL, createShareableURL } from '../utils/url';
@@ -22,6 +22,8 @@ export function Calculator() {
   const [showShareFeedback, setShowShareFeedback] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [activeLineIndex, setActiveLineIndex] = useState(0);
 
   const editorRef = useRef<HTMLDivElement | HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -112,6 +114,18 @@ export function Calculator() {
   }, [content]);
 
   useEffect(() => {
+    // Calculate active line index based on cursor position
+    const linesBeforeCursor = content.substring(0, cursorPosition).split('\n');
+    setActiveLineIndex(linesBeforeCursor.length - 1);
+  }, [cursorPosition, content]);
+
+  const updateCursorPosition = () => {
+    if (editorRef.current && 'selectionStart' in editorRef.current) {
+      setCursorPosition((editorRef.current as HTMLTextAreaElement).selectionStart);
+    }
+  };
+
+  useEffect(() => {
     // Sync scroll between editor and overlay
     const handleScroll = () => {
       if (editorRef.current && overlayRef.current) {
@@ -189,8 +203,52 @@ export function Calculator() {
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setContent(text);
+    updateCursorPosition();
     // Note: autocomplete is disabled for textarea (mobile) for now
     // Can be enhanced in future if needed
+  };
+
+  const handleToolbarAction = (action: ToolbarAction) => {
+    if (!editorRef.current || !('value' in editorRef.current)) return;
+    const textarea = editorRef.current as HTMLTextAreaElement;
+
+    switch (action) {
+      case 'left':
+        textarea.setSelectionRange(Math.max(0, textarea.selectionStart - 1), Math.max(0, textarea.selectionStart - 1));
+        updateCursorPosition();
+        break;
+      case 'right':
+        textarea.setSelectionRange(Math.min(textarea.value.length, textarea.selectionStart + 1), Math.min(textarea.value.length, textarea.selectionStart + 1));
+        updateCursorPosition();
+        break;
+      case 'dismiss':
+        textarea.blur();
+        break;
+      case 'undo':
+        document.execCommand('undo');
+        setContent(textarea.value); // Sync state
+        updateCursorPosition();
+        break;
+      case 'clear':
+        // Clear current line
+        const lines = content.split('\n');
+        if (activeLineIndex >= 0 && activeLineIndex < lines.length) {
+          // Find start and end indices of the current line
+          let start = 0;
+          for (let i = 0; i < activeLineIndex; i++) {
+            start += lines[i].length + 1; // +1 for newline
+          }
+          const end = start + lines[activeLineIndex].length;
+
+          const newContent = content.substring(0, start) + content.substring(end);
+          textarea.value = newContent;
+          setContent(newContent);
+          textarea.setSelectionRange(start, start);
+          updateCursorPosition();
+        }
+        break;
+    }
+    textarea.focus();
   };
 
   const checkAutocomplete = (element: HTMLDivElement) => {
@@ -409,7 +467,12 @@ export function Calculator() {
         </div>
       </header>
 
-      <MobileKeyboard onInsert={insertText} editorRef={editorRef} keyboardHeight={keyboardHeight} />
+      <MobileToolbar
+        onInsert={insertText}
+        onAction={handleToolbarAction}
+        currentResult={parsedLines[activeLineIndex]?.result || null}
+        keyboardHeight={keyboardHeight}
+      />
       <InstallPrompt />
 
       <div className="calculator-body">
@@ -423,6 +486,9 @@ export function Calculator() {
               spellCheck={false}
               inputMode="decimal"
               placeholder="Start typing... Try '20 + 15'"
+              onClick={updateCursorPosition}
+              onKeyUp={updateCursorPosition}
+              onSelect={updateCursorPosition}
             />
           ) : (
             <div
@@ -438,7 +504,7 @@ export function Calculator() {
 
           <div ref={overlayRef} className="results-overlay">
             {parsedLines.map((line, i) => (
-              <div key={i} className="result-line" data-type={line.type}>
+              <div key={i} className={`result-line ${i === activeLineIndex && isTouchDevice ? 'active-mobile' : ''}`} data-type={line.type}>
                 {line.type === 'header' && line.headerLevel && (
                   <span className={`header-indicator h${line.headerLevel}`}>
                     {'#'.repeat(line.headerLevel)}

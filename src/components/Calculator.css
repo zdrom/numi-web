@@ -255,14 +255,31 @@ textarea.main-editor {
 }
 
 @keyframes successPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 @keyframes errorShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  75% {
+    transform: translateX(10px);
+  }
 }
 
 .result-line .result {
@@ -427,7 +444,8 @@ textarea.main-editor {
   }
 
   .calculator-footer {
-    display: none; /* Hide footer on mobile to save space */
+    display: none;
+    /* Hide footer on mobile to save space */
   }
 }
 
@@ -520,4 +538,10 @@ textarea.main-editor {
   .calculator-footer {
     padding: 1rem 2rem;
   }
+}
+
+/* Hide result in overlay for active line on mobile since it's in toolbar */
+.result-line.active-mobile .result-container {
+  opacity: 0;
+  pointer-events: none;
 }
