@@ -3,6 +3,7 @@ import { ParsedLine } from '../types';
 import { NumiParser } from '../utils/parser';
 import { updateExchangeRates } from '../utils/currency';
 import { ThemeToggle } from './ThemeToggle';
+import { MobileKeyboard } from './MobileKeyboard';
 import { saveContent, loadContent } from '../utils/storage';
 import './Calculator.css';
 
@@ -257,6 +258,35 @@ export function Calculator() {
     }
   };
 
+  const insertText = (text: string) => {
+    if (!editorRef.current) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      // No selection, append to end
+      const currentContent = editorRef.current.textContent || '';
+      const newContent = currentContent + text;
+      editorRef.current.textContent = newContent;
+      setContent(newContent);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+
+    const textNode = document.createTextNode(text);
+    range.insertNode(textNode);
+
+    // Move cursor after inserted text
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    // Update content
+    setContent(editorRef.current.textContent || '');
+  };
+
   return (
     <div className="calculator">
       <header className="calculator-header">
@@ -332,6 +362,8 @@ export function Calculator() {
           )}
         </div>
       </div>
+
+      <MobileKeyboard onInsert={insertText} editorRef={editorRef} />
 
       <footer className="calculator-footer">
         <div className="hints">
