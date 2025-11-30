@@ -58,9 +58,7 @@ export function MobileToolbar({ onInsert, onAction, currentResult }: MobileToolb
     ];
 
     return (
-        <div
-            className="mobile-toolbar"
-        >
+        <div className="mobile-toolbar">
             {/* Row 1: Live Result & Actions */}
             <div className="toolbar-top-row">
                 <div
