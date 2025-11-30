@@ -19,7 +19,6 @@ export function Calculator() {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const syntaxRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -82,15 +81,10 @@ export function Calculator() {
   }, [content]);
 
   useEffect(() => {
-    // Sync scroll between editor and overlays
+    // Sync scroll between editor and overlay
     const handleScroll = () => {
-      if (editorRef.current) {
-        if (overlayRef.current) {
-          overlayRef.current.scrollTop = editorRef.current.scrollTop;
-        }
-        if (syntaxRef.current) {
-          syntaxRef.current.scrollTop = editorRef.current.scrollTop;
-        }
+      if (editorRef.current && overlayRef.current) {
+        overlayRef.current.scrollTop = editorRef.current.scrollTop;
       }
     };
 
@@ -100,46 +94,6 @@ export function Calculator() {
       return () => editor.removeEventListener('scroll', handleScroll);
     }
   }, []);
-
-  const highlightSyntax = (text: string): string => {
-    const variables = parser.getVariables();
-    const varNames = variables.map(v => v.name);
-    const keywords = ['prev', 'sum', 'total', 'average', 'avg', 'pi', 'e', 'in', 'to'];
-
-    // Escape special regex characters
-    const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Escape HTML first
-    let highlighted = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-
-    // Highlight comments first (so they don't get other highlighting)
-    highlighted = highlighted.replace(/(\/\/.*)/g, '<span class="syntax-comment">$1</span>');
-
-    // Highlight keywords
-    keywords.forEach(keyword => {
-      const regex = new RegExp(`\\b(${escapeRegex(keyword)})\\b`, 'g');
-      highlighted = highlighted.replace(regex, '<span class="syntax-keyword">$1</span>');
-    });
-
-    // Highlight variable names
-    varNames.forEach(varName => {
-      const regex = new RegExp(`\\b(${escapeRegex(varName)})\\b`, 'g');
-      highlighted = highlighted.replace(regex, '<span class="syntax-variable">$1</span>');
-    });
-
-    // Highlight numbers
-    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span class="syntax-number">$1</span>');
-
-    // Highlight operators
-    highlighted = highlighted.replace(/([+\-*/=()%])/g, '<span class="syntax-operator">$1</span>');
-
-    return highlighted;
-  };
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     // Get text content preserving newlines from <br> and <div> elements
@@ -340,12 +294,6 @@ export function Calculator() {
 
       <div className="calculator-body">
         <div className="editor-container">
-          <div
-            ref={syntaxRef}
-            className="syntax-overlay"
-            dangerouslySetInnerHTML={{ __html: highlightSyntax(content) }}
-          />
-
           <div
             ref={editorRef}
             className="main-editor"
