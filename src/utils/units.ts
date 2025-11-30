@@ -128,7 +128,6 @@ export const units: Record<string, ConversionUnit> = {
   'px': { name: 'pixel', symbol: 'px', toBase: 1, category: 'css-length' },
   'point': { name: 'point', symbol: 'pt', toBase: 4/3, category: 'css-length' }, // 1pt = 1/72 inch = 4/3 px
   'points': { name: 'points', symbol: 'pt', toBase: 4/3, category: 'css-length' },
-  'pt': { name: 'point', symbol: 'pt', toBase: 4/3, category: 'css-length' },
   'em': { name: 'em', symbol: 'em', toBase: 16, category: 'css-length' }, // 1em = 16px (default browser font size)
   'ems': { name: 'ems', symbol: 'em', toBase: 16, category: 'css-length' },
   'rem': { name: 'rem', symbol: 'rem', toBase: 16, category: 'css-length' }, // 1rem = 16px (root font size)

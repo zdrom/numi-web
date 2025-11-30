@@ -1,7 +1,7 @@
 import * as math from 'mathjs';
 import { add, sub } from 'date-fns';
 import { convert, convertTemperature } from './units';
-import { convertCurrency, currencySymbols, currencyNames, isCurrencyCode } from './currency';
+import { convertCurrency, currencySymbols, currencyNames } from './currency';
 import { Variable, ParsedLine } from '../types';
 
 const constants = {

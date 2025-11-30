@@ -25,7 +25,7 @@ export interface ConversionUnit {
   name: string;
   symbol: string;
   toBase: number;
-  category: 'length' | 'area' | 'volume' | 'weight' | 'temperature' | 'data' | 'time' | 'angle' | 'currency';
+  category: 'length' | 'area' | 'volume' | 'weight' | 'temperature' | 'data' | 'time' | 'angle' | 'currency' | 'css-length';
 }
 
 export interface CurrencyRate {
