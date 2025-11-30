@@ -6,6 +6,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { MobileKeyboard } from './MobileKeyboard';
 import { saveContent, loadContent } from '../utils/storage';
 import { getContentFromURL, updateURL, createShareableURL } from '../utils/url';
+import { triggerHaptic } from '../utils/haptics';
 import './Calculator.css';
 
 const parser = new NumiParser();
@@ -18,13 +19,19 @@ export function Calculator() {
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
   const [selectedAutocompleteIndex, setSelectedAutocompleteIndex] = useState(0);
   const [showShareFeedback, setShowShareFeedback] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement | HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<number | null>(null);
   const shareFeedbackTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Detect touch device
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    setIsTouchDevice(isTouch);
+
     // Load content on mount: priority is URL > localStorage > empty
     const urlContent = getContentFromURL();
 
@@ -32,7 +39,11 @@ export function Calculator() {
       // Content from URL takes precedence
       setContent(urlContent);
       if (editorRef.current) {
-        editorRef.current.textContent = urlContent;
+        if (isTouch && 'value' in editorRef.current) {
+          editorRef.current.value = urlContent;
+        } else {
+          editorRef.current.textContent = urlContent;
+        }
       }
     } else {
       // Fall back to localStorage
@@ -40,7 +51,11 @@ export function Calculator() {
       if (savedState && savedState.content) {
         setContent(savedState.content);
         if (editorRef.current) {
-          editorRef.current.textContent = savedState.content;
+          if (isTouch && 'value' in editorRef.current) {
+            editorRef.current.value = savedState.content;
+          } else {
+            editorRef.current.textContent = savedState.content;
+          }
         }
       }
     }
@@ -110,6 +125,31 @@ export function Calculator() {
     }
   }, []);
 
+  useEffect(() => {
+    // Track keyboard height on mobile devices using visualViewport API
+    if (!isTouchDevice) return;
+
+    const handleResize = () => {
+      if (window.visualViewport) {
+        const offset = window.innerHeight - window.visualViewport.height;
+        setKeyboardHeight(offset);
+
+        const isKeyboardOpen = offset > 0;
+
+        if (isKeyboardOpen && editorRef.current) {
+          // Scroll active line into view above keyboard + toolbar
+          editorRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }
+    };
+
+    window.visualViewport?.addEventListener('resize', handleResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+  }, [isTouchDevice]);
+
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     // Get text content preserving newlines from <br> and <div> elements
     const element = e.currentTarget;
@@ -143,6 +183,13 @@ export function Calculator() {
 
     // Check for autocomplete trigger
     checkAutocomplete(element);
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setContent(text);
+    // Note: autocomplete is disabled for textarea (mobile) for now
+    // Can be enhanced in future if needed
   };
 
   const checkAutocomplete = (element: HTMLDivElement) => {
@@ -250,11 +297,16 @@ export function Calculator() {
   };
 
   const clearAll = () => {
+    triggerHaptic('heavy');
     setContent('');
     setParsedLines([]);
     parser.clearVariables();
     if (editorRef.current) {
-      editorRef.current.textContent = '';
+      if (isTouchDevice && 'value' in editorRef.current) {
+        editorRef.current.value = '';
+      } else {
+        editorRef.current.textContent = '';
+      }
       editorRef.current.focus();
     }
   };
@@ -262,6 +314,7 @@ export function Calculator() {
   const copyResult = async (result: string) => {
     try {
       await navigator.clipboard.writeText(result);
+      triggerHaptic('medium');
       // Could add a toast notification here in the future
     } catch (error) {
       console.error('Failed to copy:', error);
@@ -293,6 +346,25 @@ export function Calculator() {
   const insertText = (text: string) => {
     if (!editorRef.current) return;
 
+    // Handle textarea (mobile) vs contentEditable (desktop)
+    if (isTouchDevice && 'value' in editorRef.current) {
+      const textarea = editorRef.current as HTMLTextAreaElement;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentContent = textarea.value;
+
+      const newContent = currentContent.substring(0, start) + text + currentContent.substring(end);
+      textarea.value = newContent;
+      setContent(newContent);
+
+      // Set cursor position after inserted text
+      const newPosition = start + text.length;
+      textarea.setSelectionRange(newPosition, newPosition);
+      textarea.focus();
+      return;
+    }
+
+    // ContentEditable handling (desktop)
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
       // No selection, append to end
@@ -336,19 +408,31 @@ export function Calculator() {
         </div>
       </header>
 
-      <MobileKeyboard onInsert={insertText} editorRef={editorRef} />
+      <MobileKeyboard onInsert={insertText} editorRef={editorRef} keyboardHeight={keyboardHeight} />
 
       <div className="calculator-body">
         <div className="editor-container">
-          <div
-            ref={editorRef}
-            className="main-editor"
-            contentEditable
-            onInput={handleInput}
-            onKeyDown={handleKeyDown}
-            spellCheck={false}
-            suppressContentEditableWarning
-          />
+          {isTouchDevice ? (
+            <textarea
+              ref={editorRef as React.RefObject<HTMLTextAreaElement>}
+              className="main-editor"
+              value={content}
+              onChange={handleTextareaChange}
+              spellCheck={false}
+              inputMode="decimal"
+              placeholder="Start typing... Try '20 + 15'"
+            />
+          ) : (
+            <div
+              ref={editorRef as React.RefObject<HTMLDivElement>}
+              className="main-editor"
+              contentEditable
+              onInput={handleInput}
+              onKeyDown={handleKeyDown}
+              spellCheck={false}
+              suppressContentEditableWarning
+            />
+          )}
 
           <div ref={overlayRef} className="results-overlay">
             {parsedLines.map((line, i) => (

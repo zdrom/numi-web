@@ -118,6 +118,14 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Ensure textarea has same styling as contentEditable */
+textarea.main-editor {
+  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
 .syntax-overlay {
   position: absolute;
   top: 0;
@@ -246,6 +254,17 @@
   font-weight: 600;
 }
 
+@keyframes successPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
 .result-line .result {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -255,6 +274,7 @@
   font-size: 0.875rem;
   white-space: nowrap;
   box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  animation: successPulse 0.3s ease-out;
 }
 
 [data-theme="dark"] .result-line .result {
@@ -301,6 +321,12 @@
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: errorShake 0.4s ease-out;
+}
+
+[data-theme="dark"] .result-line .error {
+  background: #7f1d1d;
+  color: #fca5a5;
 }
 
 .autocomplete-dropdown {

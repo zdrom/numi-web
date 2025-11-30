@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
+import { triggerHaptic } from '../utils/haptics';
 import './MobileKeyboard.css';
 
 interface MobileKeyboardProps {
   onInsert: (text: string) => void;
-  editorRef: React.RefObject<HTMLDivElement>;
+  editorRef: React.RefObject<HTMLDivElement | HTMLTextAreaElement>;
+  keyboardHeight: number;
 }
 
-export function MobileKeyboard({ onInsert, editorRef }: MobileKeyboardProps) {
+export function MobileKeyboard({ onInsert, editorRef, keyboardHeight }: MobileKeyboardProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -15,22 +17,26 @@ export function MobileKeyboard({ onInsert, editorRef }: MobileKeyboardProps) {
     setIsVisible(isTouchDevice);
   }, []);
 
+  // Operation-focused buttons (since numbers come from native keyboard)
   const symbols = [
-    { label: '=', value: ' = ' },
-    { label: '+', value: ' + ' },
-    { label: '-', value: ' - ' },
-    { label: '×', value: ' * ' },
-    { label: '÷', value: ' / ' },
-    { label: '%', value: '%' },
-    { label: '(', value: '(' },
-    { label: ')', value: ')' },
-    { label: '$', value: '$' },
-    { label: '€', value: '€' },
-    { label: '£', value: '£' },
-    { label: '#', value: '# ' },
+    { label: '+', value: ' + ', type: 'operator' },
+    { label: '−', value: ' - ', type: 'operator' },
+    { label: '×', value: ' * ', type: 'operator' },
+    { label: '÷', value: ' / ', type: 'operator' },
+    { label: '=', value: ' = ', type: 'operator' },
+    { label: '%', value: '%', type: 'operator' },
+    { label: '(', value: '(', type: 'symbol' },
+    { label: ')', value: ')', type: 'symbol' },
+    { label: '$', value: '$', type: 'currency' },
+    { label: '€', value: '€', type: 'currency' },
+    { label: '£', value: '£', type: 'currency' },
+    { label: '#', value: '# ', type: 'symbol' },
+    { label: 'prev', value: 'prev', type: 'function' },
+    { label: 'sum', value: 'sum', type: 'function' },
   ];
 
   const handleSymbolClick = (value: string) => {
+    triggerHaptic('light');
     onInsert(value);
     // Return focus to editor
     if (editorRef.current) {
@@ -41,7 +47,10 @@ export function MobileKeyboard({ onInsert, editorRef }: MobileKeyboardProps) {
   if (!isVisible) return null;
 
   return (
-    <div className="mobile-keyboard">
+    <div
+      className="mobile-keyboard"
+      style={{ bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined }}
+    >
       <div className="mobile-keyboard-inner">
         {symbols.map((symbol) => (
           <button
