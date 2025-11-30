@@ -37,7 +37,8 @@ export class NumiParser {
       if (varMatch) {
         const [, name, expr] = varMatch;
         const result = this.evaluate(expr);
-        this.variables.set(name, { name, value: result });
+        // Store with lowercase key for case-insensitive lookup
+        this.variables.set(name.toLowerCase(), { name, value: result });
         return this.formatResult(result);
       }
 
@@ -59,9 +60,9 @@ export class NumiParser {
       expr = expr.replace(/\bprev\b/g, String(this.previousResult));
     }
 
-    // Replace variables
+    // Replace variables (case-insensitive)
     this.variables.forEach((variable, name) => {
-      const regex = new RegExp(`\\b${name}\\b`, 'g');
+      const regex = new RegExp(`\\b${name}\\b`, 'gi');
       expr = expr.replace(regex, String(variable.value));
     });
 
@@ -405,7 +406,8 @@ export class NumiParser {
         if (varMatch) {
           const [, name, valueExpr] = varMatch;
           const result = this.evaluate(valueExpr);
-          this.variables.set(name, { name, value: result });
+          // Store with lowercase key for case-insensitive lookup
+          this.variables.set(name.toLowerCase(), { name, value: result });
           const formatted = this.formatResult(result);
 
           results.push({
