@@ -49,7 +49,9 @@ export function MobileKeyboard({ onInsert, editorRef, keyboardHeight }: MobileKe
   return (
     <div
       className="mobile-keyboard"
-      style={{ bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined }}
+      style={{
+        bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px'
+      }}
     >
       <div className="mobile-keyboard-inner">
         {symbols.map((symbol) => (
